@@ -1,0 +1,44 @@
+{
+  "_notes": {
+    "app_id": {
+      "output_folder": null,
+      "description": "飞书自建应用 App ID；不是 outputs 下的文件夹。"
+    },
+    "app_secret": {
+      "output_folder": null,
+      "description": "飞书自建应用 App Secret；公开仓库中必须保留占位值，不要填写真实 secret。"
+    },
+    "interview_bitable_app_token": {
+      "output_folder": "outputs/飞书归档结果",
+      "description": "面试记录多维表格的 app token；归档脚本会把写入结果保存到飞书归档结果。"
+    },
+    "interview_bitable_table_id": {
+      "output_folder": "outputs/飞书归档结果",
+      "description": "面试记录多维表格的 table id；归档脚本会把写入结果保存到飞书归档结果。"
+    },
+    "after_round_folder_token": {
+      "output_folder": "outputs",
+      "description": "飞书 After round 根文件夹；对应本地 outputs 根目录的归档入口。"
+    },
+    "after_round_full_dialogue_folder_token": {
+      "output_folder": "outputs/完整对话",
+      "description": "完整对话飞书子文件夹；对应本地完整对话目录。"
+    },
+    "after_round_qa_folder_token": {
+      "output_folder": "outputs/问答整理",
+      "description": "问答整理飞书子文件夹；对应本地问答整理目录。"
+    },
+    "after_round_summary_folder_token": {
+      "output_folder": "outputs/面评总结",
+      "description": "面试总评飞书子文件夹；对应本地面评总结目录。"
+    }
+  },
+  "app_id": "你的 App ID",
+  "app_secret": "你的 App Secret",
+  "interview_bitable_app_token": "",
+  "interview_bitable_table_id": "",
+  "after_round_folder_token": "",
+  "after_round_full_dialogue_folder_token": "",
+  "after_round_qa_folder_token": "",
+  "after_round_summary_folder_token": ""
+}

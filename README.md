@@ -24,6 +24,8 @@ after_round/
 │   ├── 面评总结/
 │   ├── 飞书归档状态/
 │   └── 飞书归档结果/
+├── config/
+│   └── feishu_config.json
 ├── data/
 │   ├── after_round_memory.sqlite
 │   └── exports/
@@ -80,6 +82,8 @@ AFTER_ROUND_OPENAI_MODEL=gpt-4.1
 ```text
 ~/.codex/feishu_config.json
 ```
+
+仓库里的 `config/feishu_config.json` 是公开模板，只包含占位值和字段备注。使用飞书归档前，把它复制到 `~/.codex/feishu_config.json` 后再填写自己的真实凭证，不要把真实凭证提交到仓库。
 
 推荐结构：
 

@@ -4,7 +4,8 @@ __pycache__/
 .DS_Store
 
 # Local credentials
-config/
+config/*
+!config/feishu_config.json
 *.key
 *.pem
 
@@ -20,7 +21,18 @@ config/
 *.timed.txt
 
 # Interview outputs and structured memory data
-outputs/
+outputs/**
+!outputs/
+!outputs/完整对话/
+!outputs/完整对话/.gitkeep
+!outputs/问答整理/
+!outputs/问答整理/.gitkeep
+!outputs/面评总结/
+!outputs/面评总结/.gitkeep
+!outputs/飞书归档状态/
+!outputs/飞书归档状态/.gitkeep
+!outputs/飞书归档结果/
+!outputs/飞书归档结果/.gitkeep
 data/
 
 # Personal resume / interview-private materials
