@@ -289,7 +289,63 @@ def open_auth_url(auth_url: str) -> None:
         print(auth_url, flush=True)
 
 
-def oauth_flow(app_id: str, app_secret: str) -> str:
+def build_oauth_authorize_url(app_id: str) -> str:
+    return (
+        f"{OPEN_API}/authen/v1/authorize"
+        f"?app_id={urllib.parse.quote(app_id)}"
+        f"&redirect_uri={urllib.parse.quote(REDIRECT_URI, safe='')}"
+        f"&scope={urllib.parse.quote(' '.join(DEFAULT_SCOPES), safe='')}"
+        f"&response_type=code"
+    )
+
+
+def extract_oauth_code(value: str) -> str:
+    text = value.strip()
+    if not text:
+        raise FeishuError("OAuth code 为空")
+    parsed = urllib.parse.urlparse(text)
+    if parsed.scheme and parsed.netloc:
+        params = urllib.parse.parse_qs(parsed.query)
+        if params.get("error"):
+            detail = params.get("error_description", [""])[0]
+            raise FeishuError(f"OAuth 授权失败：{params['error'][0]} {detail}".strip())
+        code = params.get("code", [""])[0].strip()
+        if not code:
+            raise FeishuError("OAuth 回调 URL 中没有 code 参数")
+        return code
+    return text
+
+
+def exchange_oauth_code(
+    app_id: str,
+    app_secret: str,
+    code: str,
+    *,
+    tenant_token: str | None = None,
+) -> str:
+    token = tenant_token or get_tenant_token(app_id, app_secret)
+    resp = curl_json(
+        "POST",
+        f"{OPEN_API}/authen/v1/access_token",
+        token=token,
+        data={"grant_type": "authorization_code", "code": code},
+        timeout=30,
+    )
+    data = resp.get("data", {})
+    access_token = data.get("access_token")
+    if resp.get("code") != 0 or not access_token:
+        raise FeishuError(f"获取 user_access_token 失败：code={resp.get('code')} msg={resp.get('msg')} data_keys={list(data)}")
+
+    token_data = {
+        "access_token": access_token,
+        "refresh_token": data.get("refresh_token", ""),
+        "expires_at": int(time.time()) + int(data.get("expires_in", 7200)) - 300,
+    }
+    write_private_json(TOKEN_CACHE_PATH, token_data)
+    return str(access_token)
+
+
+def oauth_flow(app_id: str, app_secret: str, *, no_browser: bool = False) -> str:
     tenant_token = get_tenant_token(app_id, app_secret)
     free_oauth_port()
     code_holder: dict[str, str] = {}
@@ -315,16 +371,14 @@ def oauth_flow(app_id: str, app_secret: str) -> str:
     thread = threading.Thread(target=server.handle_request, daemon=True)
     thread.start()
 
-    auth_url = (
-        f"{OPEN_API}/authen/v1/authorize"
-        f"?app_id={urllib.parse.quote(app_id)}"
-        f"&redirect_uri={urllib.parse.quote(REDIRECT_URI, safe='')}"
-        f"&scope={urllib.parse.quote(' '.join(DEFAULT_SCOPES), safe='')}"
-        f"&response_type=code"
-    )
-    print("正在打开飞书 OAuth 授权页面，请在浏览器中完成授权...", flush=True)
+    auth_url = build_oauth_authorize_url(app_id)
+    print("飞书 OAuth 授权链接：", flush=True)
     print(f"授权链接：{auth_url}", flush=True)
-    open_auth_url(auth_url)
+    if no_browser:
+        print("已启用 --no-browser：请复制上面的授权链接到浏览器打开。", flush=True)
+    else:
+        print("正在打开飞书 OAuth 授权页面，请在浏览器中完成授权...", flush=True)
+        open_auth_url(auth_url)
     thread.join(timeout=180)
     server.server_close()
 
@@ -336,35 +390,36 @@ def oauth_flow(app_id: str, app_secret: str) -> str:
 
     code = code_holder.get("code")
     if not code:
-        raise FeishuError("180 秒内未收到 OAuth 授权码")
+        raise FeishuError(
+            "180 秒内未收到 OAuth 授权码。"
+            "如果浏览器没有成功回调 localhost，请复制浏览器地址栏中的完整回调 URL 后重跑："
+            "--oauth-callback-url 'http://localhost:9998/callback?code=...'；"
+            "或只复制 code 后重跑：--oauth-code '...'"
+        )
 
-    resp = curl_json(
-        "POST",
-        f"{OPEN_API}/authen/v1/access_token",
-        token=tenant_token,
-        data={"grant_type": "authorization_code", "code": code},
-        timeout=30,
-    )
-    data = resp.get("data", {})
-    access_token = data.get("access_token")
-    if resp.get("code") != 0 or not access_token:
-        raise FeishuError(f"获取 user_access_token 失败：code={resp.get('code')} msg={resp.get('msg')} data_keys={list(data)}")
-
-    token_data = {
-        "access_token": access_token,
-        "refresh_token": data.get("refresh_token", ""),
-        "expires_at": int(time.time()) + int(data.get("expires_in", 7200)) - 300,
-    }
-    write_private_json(TOKEN_CACHE_PATH, token_data)
-    return str(access_token)
+    return exchange_oauth_code(app_id, app_secret, code, tenant_token=tenant_token)
 
 
-def get_user_token(app_id: str, app_secret: str) -> str:
+def get_user_token(
+    app_id: str,
+    app_secret: str,
+    *,
+    no_browser: bool = False,
+    oauth_callback_url: str = "",
+    oauth_code: str = "",
+) -> str:
+    manual_code = oauth_code.strip()
+    if oauth_callback_url.strip():
+        manual_code = extract_oauth_code(oauth_callback_url)
+    if manual_code:
+        print("使用手动提供的 OAuth code 换取 Feishu user token。", flush=True)
+        return exchange_oauth_code(app_id, app_secret, manual_code)
+
     cached = load_cached_user_token()
     if cached:
         print("检测到可用的 Feishu user token 缓存，直接复用。", flush=True)
         return cached
-    return oauth_flow(app_id, app_secret)
+    return oauth_flow(app_id, app_secret, no_browser=no_browser)
 
 
 def text_elements(text: str, *, force_bold: bool = False) -> list[dict[str, Any]]:
@@ -773,6 +828,21 @@ def parse_args() -> argparse.Namespace:
         default="user",
         help="Use OAuth user token by default. Tenant mode skips OAuth and uses the app tenant token.",
     )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="User token 模式下只打印 OAuth 授权链接，不尝试自动打开浏览器。",
+    )
+    parser.add_argument(
+        "--oauth-callback-url",
+        default="",
+        help="User token 模式下手动粘贴浏览器回调完整 URL，例如 http://localhost:9998/callback?code=...",
+    )
+    parser.add_argument(
+        "--oauth-code",
+        default="",
+        help="User token 模式下手动粘贴 OAuth code，适合 localhost 回调失败后重跑。",
+    )
     return parser.parse_args()
 
 
@@ -817,10 +887,18 @@ def main() -> int:
         ),
     }
     if args.token_mode == "tenant":
+        if args.oauth_callback_url or args.oauth_code:
+            raise FeishuError("--oauth-callback-url / --oauth-code 只适用于 --token-mode user")
         print("使用 tenant token 模式，跳过 OAuth。", flush=True)
         token = get_tenant_token(app_id, app_secret)
     else:
-        token = get_user_token(app_id, app_secret)
+        token = get_user_token(
+            app_id,
+            app_secret,
+            no_browser=args.no_browser,
+            oauth_callback_url=args.oauth_callback_url,
+            oauth_code=args.oauth_code,
+        )
 
     if args.move_existing_only:
         print("只移动已有飞书资产，不创建文档、不新增多维表格记录。", flush=True)

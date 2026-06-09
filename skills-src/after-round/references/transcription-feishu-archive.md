@@ -138,7 +138,25 @@ sudo apt install ffmpeg
    - `after_round_summary_folder_token`：面试总评子文件夹。
    - 若这些字段为空，则退回默认行为：文档和多维表格创建在飞书 API 默认位置。
 
-配置完成后，第一次使用时会自动打开浏览器完成飞书 OAuth 授权，之后 token 自动缓存，无需重复操作。
+配置完成后，默认 `--token-mode user` 会通过浏览器完成飞书 OAuth 授权，之后 token 自动缓存，无需重复操作。归档脚本也支持 `--token-mode tenant`，直接使用应用 tenant token 跳过 OAuth；这种模式更适合个人自动化，但 public 使用门槛更高，因为使用者必须创建并配置飞书自建应用。
+
+如果当前环境无法自动打开浏览器，使用：
+
+```bash
+python3 scripts/archive_after_round_to_feishu.py --token-mode user --no-browser ...
+```
+
+脚本会打印授权链接，用户手动复制到浏览器打开。如果浏览器授权后 localhost 回调失败，复制浏览器地址栏里的完整回调 URL 后重跑：
+
+```bash
+python3 scripts/archive_after_round_to_feishu.py --token-mode user --oauth-callback-url "http://localhost:9998/callback?code=..." ...
+```
+
+也可以只复制 `code` 参数重跑：
+
+```bash
+python3 scripts/archive_after_round_to_feishu.py --token-mode user --oauth-code "..." ...
+```
 
 ---
 
@@ -394,6 +412,11 @@ def get_token():
 ```
 
 首次运行会打开浏览器授权，之后 token 自动缓存复用，无需重复操作。
+
+命令行脚本中的实际实现已补充手动 OAuth fallback：
+- `--no-browser`：只打印授权链接，不尝试自动打开浏览器。
+- `--oauth-callback-url`：授权后粘贴完整 localhost 回调 URL，脚本从中提取 `code`。
+- `--oauth-code`：直接粘贴 OAuth code 换取 user token。
 
 > **关键：** 获取 token 后，立即在同一脚本中继续执行后续所有操作（创建文档、写 bitable），不要中断等待用户确认，否则 token 会在等待中过期。
 

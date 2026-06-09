@@ -112,6 +112,38 @@ OAuth 回调地址配置为：
 http://localhost:9998/callback
 ```
 
+归档脚本支持两种 token 模式：
+
+- `--token-mode user`：默认模式。用浏览器 OAuth 获取个人授权，写入内容归属于授权用户，适合 public 项目的普通使用者。
+- `--token-mode tenant`：跳过 OAuth，直接使用应用的 tenant token，适合你自己的自动化归档链路；但使用者必须先创建并配置飞书自建应用。
+
+如果当前环境无法自动打开浏览器，可以让脚本只打印授权链接：
+
+```bash
+python3 scripts/archive_after_round_to_feishu.py \
+  --token-mode user \
+  --no-browser \
+  ...
+```
+
+如果浏览器授权后 localhost 回调失败，复制浏览器地址栏里的完整回调 URL 重跑：
+
+```bash
+python3 scripts/archive_after_round_to_feishu.py \
+  --token-mode user \
+  --oauth-callback-url "http://localhost:9998/callback?code=..." \
+  ...
+```
+
+也可以只复制 `code` 参数：
+
+```bash
+python3 scripts/archive_after_round_to_feishu.py \
+  --token-mode user \
+  --oauth-code "..." \
+  ...
+```
+
 ### 音视频转录依赖
 
 只有处理 `.m4a`、`.mp3`、`.wav`、`.mp4` 或 mock 语音输入时需要。
@@ -179,7 +211,8 @@ python3 scripts/archive_after_round_to_feishu.py \
 
 - `~/.codex/feishu_config.json` 中配置了 `app_id` 和 `app_secret`。
 - 飞书应用有 `docx:document`、`bitable:app`、`drive:drive` 权限。
-- 第一次运行会走 OAuth 授权。
+- 默认 `--token-mode user` 会走 OAuth 授权；无法自动打开浏览器时加 `--no-browser`，回调失败时用 `--oauth-callback-url` 或 `--oauth-code` 重跑。
+- 如需跳过 OAuth，可加 `--token-mode tenant` 使用 tenant token。
 
 ### 3. 记忆抽取
 
