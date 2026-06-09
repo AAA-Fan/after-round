@@ -194,7 +194,7 @@ outputs/面评总结/{公司}-{岗位}-{轮次}-面试总评.md
 
 ### 2. 飞书归档
 
-如果已经有三份 Markdown，可以单独执行飞书归档：
+如果已经有三份 Markdown，可以单独执行飞书归档， 也可以通过`after-round` skill 协助完成：
 
 ```bash
 python3 scripts/archive_after_round_to_feishu.py \
@@ -213,10 +213,11 @@ python3 scripts/archive_after_round_to_feishu.py \
 - 飞书应用有 `docx:document`、`bitable:app`、`drive:drive` 权限。
 - 默认 `--token-mode user` 会走 OAuth 授权；无法自动打开浏览器时加 `--no-browser`，回调失败时用 `--oauth-callback-url` 或 `--oauth-code` 重跑。
 - 如需跳过 OAuth，可加 `--token-mode tenant` 使用 tenant token。
+- 如果需要按照outputs文件夹内相同的结构归档飞书文档，需要在飞书新建对应的文件夹名，并把文件夹的token填在`config.json` 中。
 
 ### 3. 记忆抽取
 
-从已有面试总评中抽取结构化记忆：
+从已有面试总评中抽取结构化记忆， 也可以通过`after-round` skill 协助完成：
 
 ```bash
 python3 scripts/memory_ingest.py \
@@ -236,7 +237,7 @@ python3 scripts/memory_ingest.py \
 
 ### 4. 生成跨场 LLM 报告
 
-把 SQLite 聚合结果交给 LLM，可以分析在这个过程中共性的错误，以及捕捉成长的动态变化：
+把 SQLite 聚合结果交给 LLM，可以分析在这个过程中共性的错误，以及捕捉成长的动态变化， 也可以通过`after-round` skill 协助完成：
 
 ```bash
 python3 scripts/memory_llm_report.py \
@@ -251,7 +252,7 @@ python3 scripts/memory_llm_report.py \
 
 ### 5. 生成模拟面试计划
 
-基于历史薄弱点生成模拟面试题：
+基于历史薄弱点生成模拟面试题， 也可以通过`after-round` skill 协助完成：
 
 ```bash
 python3 scripts/mock_plan.py \
