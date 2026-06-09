@@ -1,0 +1,8 @@
+interface:
+  display_name: "after_round"
+  short_description: "面试归纳、跨场记忆和模拟面试"
+  brand_color: "#2563EB"
+  default_prompt: "Use $after-round to route this interview-coach task to single-round debrief, cross-session memory analysis, or mock interview workflow."
+
+policy:
+  allow_implicit_invocation: true

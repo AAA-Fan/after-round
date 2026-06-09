@@ -1,0 +1,31 @@
+.env
+__pycache__/
+*.pyc
+.DS_Store
+
+# Local credentials
+config/
+*.key
+*.pem
+
+# Interview recordings and transcripts
+*.m4a
+*.mp3
+*.wav
+*.mp4
+*.mov
+*.aac
+*.flac
+*.segments.json
+*.timed.txt
+
+# Interview outputs and structured memory data
+outputs/
+data/
+
+# Personal resume / interview-private materials
+简历.md
+*简历*
+
+# Local-only tests may contain interview-shaped examples
+tests/
